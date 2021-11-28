@@ -25,7 +25,8 @@ const wallet = new ethers.Wallet(privateKey, provider);
 const app = express();
 
  // Creating a cron job which runs every 12 hours
- // "*/5 * * * * *" - 5 seconds
+ // "0 0 */12 * * *" - every 12 hours
+ // "*/5 * * * * *" - every 5 seconds
 cron.schedule("0 0 */12 * * *", async function() {
     await updateAllTvls();
 });
@@ -36,14 +37,10 @@ async function updateAllTvls() {
     try {
         const tx = await revaChefContract.updateAllTvls();
         console.log(`tx data ${JSON.stringify(tx, null, 2)}`);
-        const receipt = await tx.wait();
-        if (receipt) {
-            //console.log(`receipt ${JSON.stringify(receipt, null, 2)}`);
-            console.log("transaction confirmed!");
-        }
-        else {
-            console.error("transaction not confirmed!");
-        }        
+        
+        //const receipt = await tx.wait(); 
+        await provider.waitForTransaction(tx.hash, 1);  //blocks until the transaction has 1 block
+        console.log("TX confirmed with 1 block");
     } catch(e) {
         console.error("error updating TVLs");
         console.error(e.message);
@@ -52,5 +49,6 @@ async function updateAllTvls() {
 
 
 app.listen(process.env.PORT || 5000, async function() {
-    console.log(`tvlupdater app listening at http://localhost:${process.env.PORT || 5000}`);
+    console.log(`tvlupdater app listening at http://localhost:${process.env.PORT || 5000}`)
+    console.log(`provider url: ${providerUrl}`);
 });
